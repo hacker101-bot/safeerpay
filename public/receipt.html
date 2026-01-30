@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Receipt</title>
+
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 40px 10px;
+      color: #333;
+    }
+
+    .receipt {
+      max-width: 480px;
+      margin: auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.08);
+      overflow: hidden;
+    }
+
+    .header {
+      background: #f03e3e;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .status {
+      font-size: 14px;
+      margin-top: 6px;
+      opacity: .9;
+    }
+
+    .content {
+      padding: 24px;
+    }
+
+    .amount {
+      font-size: 26px;
+      font-weight: bold;
+      text-align: center;
+      margin: 18px 0;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 20px 0;
+    }
+
+    .success { color: #2f9e44; font-weight: 600; }
+    .pending { color: #f59f00; font-weight: 600; }
+    .error   { color: #e03131; font-weight: 600; }
+
+    .footer {
+      font-size: 12px;
+      text-align: center;
+      color: #777;
+      padding: 16px;
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+
+<div class="receipt">
+  <div class="header">
+    <h2>Payment Receipt</h2>
+    <div id="statusText" class="status"></div>
+  </div>
+
+  <div class="content">
+    <div id="amount" class="amount"></div>
+
+    <div class="divider"></div>
+
+    <div class="row"><strong>Transaction ID</strong><span id="txId"></span></div>
+    <div class="row"><strong>Payment Method</strong><span id="method"></span></div>
+    <div class="row"><strong>Status</strong><span id="status"></span></div>
+    <div class="row"><strong>Date</strong><span id="date"></span></div>
+    <div class="row"><strong>Currency</strong><span id="currency"></span></div>
+
+    <div class="divider"></div>
+
+    <div class="row"><strong>Merchant</strong><span>Your Company Name</span></div>
+  </div>
+
+  <div class="footer">
+    Payment processed securely via Saferpay
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search)
+  const transactionId = params.get('transactionId')
+
+  if (!transactionId) {
+    alert('Invalid receipt link')
+  }
+
+  fetch(`/api/transaction/${transactionId}`)
+    .then(res => res.json())
+    .then(data => {
+      const { status, amount, currency, method, date } = data
+
+      document.getElementById('txId').textContent = transactionId
+      document.getElementById('amount').textContent = `€${(amount / 100).toFixed(2)}`
+      document.getElementById('currency').textContent = currency
+      document.getElementById('method').textContent = method
+      document.getElementById('date').textContent = new Date(date).toDateString()
+      document.getElementById('status').textContent = status
+
+      const statusText = document.getElementById('statusText')
+
+      if (status === 'CAPTURED') {
+        statusText.textContent = 'Payment Successful'
+        statusText.className = 'status success'
+      } else if (status === 'PENDING') {
+        statusText.textContent = 'Awaiting Bank Transfer'
+        statusText.className = 'status pending'
+      } else {
+        statusText.textContent = 'Payment Failed'
+        statusText.className = 'status error'
+      }
+    })
+    .catch(() => alert('Unable to load receipt'))
+</script>
+
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment System Error | Your Store Name</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #fdfcfb 0%, #f5f7fa 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      border: 1px solid #eaeaea;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+    }
+    
+    .header-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+    }
+    
+    .header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.5px;
+    }
+    
+    .header p {
+      font-size: 18px;
+      opacity: 0.9;
+      font-weight: 400;
+    }
+    
+    .content {
+      padding: 40px 30px;
+    }
+    
+    .alert-box {
+      background: #fff8e1;
+      border-left: 4px solid #f39c12;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    
+    .alert-box h3 {
+      color: #7d6608;
+      margin-bottom: 10px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .alert-box p {
+      color: #7d6608;
+      font-size: 15px;
+    }
+    
+    .details-box {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .details-box h3 {
+      color: #495057;
+      margin-bottom: 15px;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    #error-message {
+      font-family: 'Courier New', monospace;
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+      font-size: 14px;
+      color: #dc3545;
+      word-break: break-word;
+      margin: 0;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .reference-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px dashed #dee2e6;
+    }
+    
+    .reference-info span:first-child {
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    #reference-id {
+      font-family: 'Courier New', monospace;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: 1px solid #e9ecef;
+      color: #007bff;
+      font-weight: 600;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      flex: 1;
+      min-width: 150px;
+      padding: 16px 24px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+    }
+    
+    .btn-secondary {
+      background: #f8f9fa;
+      color: #495057;
+      border: 2px solid #e9ecef;
+    }
+    
+    .btn-secondary:hover {
+      background: #e9ecef;
+      transform: translateY(-2px);
+    }
+    
+    .support-section {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 25px;
+      margin-top: 30px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .support-section h3 {
+      color: #495057;
+      margin-bottom: 15px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .support-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    @media (max-width: 600px) {
+      .support-info {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .info-item {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .info-item h4 {
+      color: #007bff;
+      margin-bottom: 5px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .info-item p, .info-item a {
+      color: #495057;
+      font-size: 15px;
+      text-decoration: none;
+    }
+    
+    .info-item a:hover {
+      color: #007bff;
+      text-decoration: underline;
+    }
+    
+    .footer-note {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e9ecef;
+      color: #6c757d;
+      font-size: 14px;
+    }
+    
+    .footer-note strong {
+      color: #495057;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #f39c12;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .copy-btn {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 10px;
+      transition: background 0.2s;
+    }
+    
+    .copy-btn:hover {
+      background: #5a6268;
+    }
+    
+    .copy-btn.copied {
+      background: #28a745;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h1>System Error</h1>
+      <p>A technical issue occurred during payment processing</p>
+    </div>
+    
+    <div class="content">
+      <div class="alert-box">
+        <h3><i class="fas fa-info-circle"></i> Important Information</h3>
+        <p>This is a system error, not a payment failure. Your payment may or may not have been processed. Please check your bank statement and contact support if needed.</p>
+      </div>
+      
+      <div class="details-box">
+        <h3>Error Details</h3>
+        <div id="error-message">
+          <span class="loading"></span>
+          <span id="loading-text">Loading error information...</span>
+        </div>
+        <div class="reference-info">
+          <span>Reference ID:</span>
+          <span id="reference-id">--</span>
+          <button class="copy-btn" onclick="copyReferenceId()" title="Copy Reference ID">
+            <i class="far fa-copy"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="action-buttons">
+        <a href="/checkout.html" class="btn btn-primary">
+          <i class="fas fa-redo"></i>
+          Try Payment Again
+        </a>
+        <a href="/" class="btn btn-secondary">
+          <i class="fas fa-home"></i>
+          Return to Home
+        </a>
+      </div>
+      
+      <div class="support-section">
+        <h3><i class="fas fa-headset"></i> Need Assistance?</h3>
+        <div class="support-info">
+          <div class="info-item">
+            <h4>Email Support</h4>
+            <p>
+              <a href="mailto:support@yourstore.com">
+                <i class="fas fa-envelope"></i>
+                support@yourstore.com
+              </a>
+            </p>
+          </div>
+          <div class="info-item">
+            <h4>Phone Support</h4>
+            <p>
+              <i class="fas fa-phone"></i>
+              +1 (800) 123-4567
+            </p>
+            <small style="color: #6c757d; display: block; margin-top: 5px;">Mon-Fri, 9AM-6PM EST</small>
+          </div>
+        </div>
+        <div style="margin-top: 20px; font-size: 14px; color: #6c757d;">
+          <p><i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Please provide the Reference ID above when contacting support for faster assistance.</p>
+        </div>
+      </div>
+      
+      <div class="footer-note">
+        <p>
+          <strong>Note about your payment:</strong> If money was deducted from your account, 
+          it will typically be refunded automatically within 3-5 business days. 
+          If you don't see a refund after 5 days, please contact us.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = new URLSearchParams(window.location.search);
+      const message = params.get('message');
+      const error = params.get('error');
+      const token = params.get('token');
+      
+      const errorMessageEl = document.getElementById('error-message');
+      const loadingText = document.getElementById('loading-text');
+      const loadingSpinner = errorMessageEl.querySelector('.loading');
+      const referenceIdEl = document.getElementById('reference-id');
+      
+      // Generate a reference ID
+      function generateReferenceId() {
+        const timestamp = Date.now().toString(36).toUpperCase();
+        const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+        return `ERR-${timestamp}-${random}`;
+      }
+      
+      // Display error message
+      setTimeout(() => {
+        if (message) {
+          errorMessageEl.innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right: 10px;"></i>${decodeURIComponent(message)}`;
+        } else if (error) {
+          errorMessageEl.innerHTML = `<i class="fas fa-exclamation-circle" style="margin-right: 10px;"></i>${decodeURIComponent(error)}`;
+        } else {
+          errorMessageEl.innerHTML = '<i class="fas fa-exclamation-circle" style="margin-right: 10px;"></i>An unexpected system error occurred.';
+        }
+        
+        // Hide loading elements
+        loadingSpinner.classList.add('hidden');
+        if (loadingText) loadingText.classList.add('hidden');
+        
+        // Set reference ID
+        if (token) {
+          // Use first 8 chars of token
+          referenceIdEl.textContent = token.substring(0, 8).toUpperCase() + '...';
+          referenceIdEl.setAttribute('data-full', token);
+        } else {
+          const refId = generateReferenceId();
+          referenceIdEl.textContent = refId;
+          referenceIdEl.setAttribute('data-full', refId);
+        }
+      }, 800); // Small delay for UX
+        
+      // Log error to backend (optional)
+      if (token || message) {
+        const errorData = {
+          type: 'payment_error',
+          message: message || error || 'Unknown error',
+          token: token,
+          url: window.location.href,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+          referenceId: referenceIdEl.getAttribute('data-full')
+        };
+        
+        // Send to your backend
+        fetch('/api/payments/log-error', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(errorData)
+        }).catch(err => {
+          console.log('Error logging failed (non-critical):', err);
+        });
+      }
+    });
+    
+    function copyReferenceId() {
+      const refId = document.getElementById('reference-id').getAttribute('data-full');
+      const copyBtn = document.querySelector('.copy-btn');
+      
+      navigator.clipboard.writeText(refId).then(() => {
+        // Visual feedback
+        const originalHTML = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+        copyBtn.classList.add('copied');
+        
+        setTimeout(() => {
+          copyBtn.innerHTML = originalHTML;
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Unable to copy reference ID. Please copy it manually.');
+      });
+    }
+    
+    // Auto-redirect after 30 seconds if user does nothing
+    setTimeout(() => {
+      const shouldRedirect = confirm('You\'ve been on this page for 30 seconds. Would you like to return to the homepage?');
+      if (shouldRedirect) {
+        window.location.href = '/';
+      }
+    }, 30000);
+  </script>
+</body>
+</html>

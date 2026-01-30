@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Payment Successful</title>
+</head>
+<body style="font-family: Arial, sans-serif; background:#f4f6f8; margin:0; padding:40px;">
+
+  <div style="max-width:500px; margin:auto; background:#fff; padding:30px; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,.1); text-align:center;">
+    <h1 style="color:#2ecc71;">Processing Payment…</h1>
+    <p id="message" style="font-size:16px;">Please wait while we confirm your payment.</p>
+  </div>
+
+  <script>
+    const message = document.getElementById("message")
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get("token")
+
+    if (!token) {
+      message.textContent = "Missing payment token."
+      message.style.color = "red"
+    } else {
+      fetch("/api/payments/assert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          message.textContent = "✅ Payment confirmed. Thank you!"
+          message.style.color = "#2ecc71"
+        } else {
+          message.textContent = "❌ Payment verification failed."
+          message.style.color = "red"
+        }
+      })
+      .catch(() => {
+        message.textContent = "Server error while verifying payment."
+        message.style.color = "red"
+      })
+    }
+  </script>
+
+</body>
+</html>

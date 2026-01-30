@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Mock Payment</title>
+  <style>
+    body { font-family: Arial; padding: 40px; max-width: 600px; margin: auto; }
+    .btn { padding: 12px 24px; margin: 10px; border: none; border-radius: 5px; cursor: pointer; }
+    .success { background: #28a745; color: white; }
+    .mock { background: #17a2b8; color: white; }
+  </style>
+</head>
+<body>
+  <h1>Payment Demo</h1>
+  
+  <h2>🎯 Mock Payment (Works Now!)</h2>
+  <button class="btn mock" onclick="testMockPayment()">
+    Test Mock Payment (€10)
+  </button>
+  
+  <h2>🔗 Real Saferpay (If fixed)</h2>
+  <button class="btn success" onclick="testRealPayment()">
+    Test Real Saferpay
+  </button>
+  
+  <div id="result" style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 5px;"></div>
+  
+  <script>
+    async function testMockPayment() {
+      const result = document.getElementById('result')
+      result.innerHTML = 'Starting mock payment...'
+      
+      try {
+        const response = await fetch('/api/payments/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: '1000' })
+        })
+        
+        const data = await response.json()
+        result.innerHTML = `
+          <h3>✅ Mock Payment Ready</h3>
+          <p>Redirect URL: ${data.redirectUrl}</p>
+          <button onclick="window.location.href='${data.redirectUrl}'">
+            Go to Mock Payment Page
+          </button>
+        `
+        
+      } catch (error) {
+        result.innerHTML = `Error: ${error.message}`
+      }
+    }
+    
+    async function testRealPayment() {
+      const result = document.getElementById('result')
+      result.innerHTML = 'Trying real Saferpay...'
+      
+      try {
+        const response = await fetch('/api/real-payments/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: '1000' })
+        })
+        
+        const data = await response.json()
+        result.innerHTML = `
+          <h3>${data.redirectUrl ? '✅' : '❌'} Real Payment</h3>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+          ${data.redirectUrl ? `
+            <button onclick="window.location.href='${data.redirectUrl}'">
+              Go to Real Saferpay
+            </button>
+          ` : ''}
+        `
+        
+      } catch (error) {
+        result.innerHTML = `<h3>❌ Real Saferpay Failed</h3><p>${error.message}</p>`
+      }
+    }
+  </script>
+</body>
+</html>

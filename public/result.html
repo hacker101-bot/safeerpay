@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Processing Payment</title>
+</head>
+<body>
+  <h2>Processing your payment...</h2>
+
+<script>
+  const params = new URLSearchParams(window.location.search)
+  const token = params.get('token')
+
+  if (!token) {
+    document.body.innerHTML = '<h3>Invalid payment response</h3>'
+    throw new Error('Missing token')
+  }
+
+  // STEP 1: ASSERT
+  fetch('/api/payments/assert', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token })
+  })
+  .then(res => res.json())
+  .then(data => {
+    console.log('ASSERT RESULT:', data)
+
+    if (!data.success) {
+      window.location.href = '/fail.html'
+      return
+    }
+
+    // CARD PAYMENTS
+    if (data.status === 'AUTHORIZED') {
+      const tx = data.transaction
+
+      fetch('/api/payments/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactionId: tx.Id,
+          amount: tx.Amount.Value
+        })
+      })
+      .then(res => res.json())
+      .then(capture => {
+        // redirect AFTER successful capture
+        window.location.href = `/receipt.html?transactionId=${tx.Id}`
+      })
+      .catch(() => {
+        window.location.href = '/fail.html'
+      })
+    }
+
+    // BANK TRANSFER
+    if (data.status === 'PENDING') {
+      window.location.href = '/pending.html'
+    }
+  })
+  .catch(() => {
+    document.body.innerHTML = '<h3>Payment verification failed</h3>'
+  })
+</script>
+
+</body>
+</html>
