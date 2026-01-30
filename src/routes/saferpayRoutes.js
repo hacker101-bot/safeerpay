@@ -3,8 +3,13 @@ import crypto from 'crypto'
 import fetch from 'node-fetch'
 
 const router = express.Router()
+const SERVER_URL = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : 'http://localhost:5000';
 
 
+
+console.log('Server URL configured:', SERVER_URL);
 router.post('/init', async (req, res) => {
   try {
     const { amount } = req.body
