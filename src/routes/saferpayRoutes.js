@@ -1,5 +1,6 @@
 import express from 'express'
 import crypto from 'crypto'
+import fetch from 'node-fetch'
 
 const router = express.Router()
 

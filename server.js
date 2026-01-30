@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import fetch from 'node-fetch'
 import express from 'express'
 import path from 'path'
 import saferpayRoutes from './src/routes/saferpayRoutes.js'
