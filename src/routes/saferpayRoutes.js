@@ -102,6 +102,7 @@ router.post('/init', async (req, res) => {
     res.json({ 
       success: true,
       token: data.Token,           // Token from response
+      orderId: orderId,
       redirectUrl: redirectUrl, // RedirectUrl (capital R!)
       expiration: data.Expiration
     })

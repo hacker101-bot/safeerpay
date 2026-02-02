@@ -128,8 +128,10 @@
       
       if (data.redirectUrl) {
         console.log('Redirecting to:', data.redirectUrl);
-        
-        
+        if (data.token && data.orderId) {
+          sessionStorage.setItem(`saferpay-token:${data.orderId}`, data.token)
+        }
+
         // Small delay for user to see message
         setTimeout(() => {
           window.location.href = data.redirectUrl;
