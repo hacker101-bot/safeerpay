@@ -26,14 +26,70 @@
         body: JSON.stringify({ token })
       })
       .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          message.textContent = "✅ Payment confirmed. Thank you!"
-          message.style.color = "#2ecc71"
-        } else {
-          message.textContent = "❌ Payment verification failed."
+      .then(async data => {
+        if (!data.success) {
+          message.textContent = "Payment verification failed."
           message.style.color = "red"
+          return
         }
+
+        const status = data.status
+
+        if (status === "AUTHORIZED") {
+          message.textContent = "Authorized. Capturing payment..."
+          message.style.color = "#f39c12"
+
+          const transactionId = data.transaction?.Id
+          const amount = data.transaction?.Amount?.Value
+
+          if (!transactionId || !amount) {
+            message.textContent = "Missing capture details."
+            message.style.color = "red"
+            return
+          }
+
+          try {
+            const captureRes = await fetch("/api/payments/capture", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ transactionId, amount })
+            })
+
+            const captureData = await captureRes.json()
+
+            if (captureRes.ok && captureData.success) {
+              message.textContent = "Payment captured. Redirecting to receipt..."
+              message.style.color = "#2ecc71"
+              if (captureData.redirectUrl) {
+                setTimeout(() => {
+                  window.location.href = captureData.redirectUrl
+                }, 800)
+              }
+            } else {
+              message.textContent = "Capture failed. Please contact support."
+              message.style.color = "red"
+            }
+          } catch (err) {
+            message.textContent = "Server error while capturing payment."
+            message.style.color = "red"
+          }
+          return
+        }
+
+        if (status === "CAPTURED") {
+          message.textContent = "Payment captured. Thank you!"
+          message.style.color = "#2ecc71"
+          return
+        }
+
+        if (status === "PENDING") {
+          message.textContent = "Payment pending. We will update you shortly."
+          message.style.color = "#f39c12"
+          return
+        }
+
+        message.textContent = "Payment completed."
+        message.style.color = "#2ecc71"
       })
       .catch(() => {
         message.textContent = "Server error while verifying payment."

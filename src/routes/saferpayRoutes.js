@@ -1,15 +1,11 @@
 import express from 'express'
 import crypto from 'crypto'
-import fetch from 'node-fetch'
 
 const router = express.Router()
-const SERVER_URL = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : 'http://localhost:5000';
+const tokenStore = new Map()
+const receiptStore = new Map()
 
 
-
-console.log('Server URL configured:', SERVER_URL);
 router.post('/init', async (req, res) => {
   try {
     const { amount } = req.body
@@ -17,6 +13,12 @@ router.post('/init', async (req, res) => {
     if (!amount) {
       return res.status(400).json({ error: 'Amount is required' })
     }
+
+    const baseUrl =
+      process.env.APP_BASE_URL ||
+      `http://localhost:${process.env.PORT || 5000}`
+
+    const orderId = `ORDER-${Date.now()}`
 
     const payload = {
       RequestHeader: {
@@ -31,14 +33,13 @@ router.post('/init', async (req, res) => {
           Value: amount,
           CurrencyCode: 'EUR'
         },
-        OrderId: `ORDER-${Date.now()}`,
+        OrderId: orderId,
         Description: 'EUR Payment'
       },
-      // ✅ FIXED: Correct ReturnUrls structure
       ReturnUrls: {
-        Success: `${SERVER_URL}/api/payments/return/success`,
-        Fail: `${SERVER_URL}/api/payments/return/fail`,
-        Abort: `${SERVER_URL}/api/payments/return/abort`
+        Success: `${baseUrl}/api/payments/return/success?orderId=${orderId}`,
+        Fail: `${baseUrl}/api/payments/return/fail?orderId=${orderId}`,
+        Abort: `${baseUrl}/api/payments/return/abort?orderId=${orderId}`
       }
     }
 
@@ -62,8 +63,9 @@ router.post('/init', async (req, res) => {
     )
 
     const text = await response.text()
+    console.log('📡 Saferpay RAW response:', text)  // Log the actual response
+    
     let data
-
     try {
       data = JSON.parse(text)
     } catch {
@@ -71,12 +73,38 @@ router.post('/init', async (req, res) => {
       return res.status(500).json({ error: 'Invalid response from Saferpay' })
     }
 
-    if (!response.ok || !data.RedirectUrl) {
-      console.error('Saferpay error:', data)
-      return res.status(500).json(data)
+    // ⭐⭐⭐ FIX: Check for correct response structure ⭐⭐⭐
+    if (!response.ok) {
+      console.error('Saferpay API error:', data)
+      return res.status(500).json({ 
+        error: 'Saferpay API error',
+        details: data 
+      })
     }
 
-    res.json({ redirectUrl: data.RedirectUrl })
+    const redirectUrl = data.RedirectUrl || data.Redirect?.RedirectUrl
+
+    // Check if we got the expected response
+    if (!data.Token || !redirectUrl) {
+      console.error('Unexpected Saferpay response structure:', data)
+      return res.status(500).json({ 
+        error: 'Invalid response structure from Saferpay',
+        received: data 
+      })
+    }
+
+    tokenStore.set(orderId, {
+      token: data.Token,
+      expiration: data.Expiration
+    })
+
+    // CORRECT RESPONSE FORMAT
+    res.json({ 
+      success: true,
+      token: data.Token,           // Token from response
+      redirectUrl: redirectUrl, // RedirectUrl (capital R!)
+      expiration: data.Expiration
+    })
 
   } catch (err) {
     console.error('Server error:', err)
@@ -216,9 +244,28 @@ router.post('/capture', async (req, res) => {
       return res.status(500).json(data)
     }
 
+    const resolvedTransactionId =
+      data.Transaction?.Id ||
+      data.Capture?.TransactionId ||
+      transactionId
+
+    if (resolvedTransactionId) {
+      receiptStore.set(resolvedTransactionId, {
+        status: data.Transaction?.Status || 'CAPTURED',
+        amount: amount,
+        currency: 'EUR',
+        method: data.PaymentMeans?.Brand?.Name || 'Card',
+        date: data.Transaction?.Date || new Date().toISOString()
+      })
+    }
+
     return res.json({
       success: true,
-      redirectUrl: `/receipt.html?transactionId=${data.Transaction.Id}`
+      transactionId: resolvedTransactionId,
+      capture: data,
+      redirectUrl: resolvedTransactionId
+        ? `/receipt.html?transactionId=${resolvedTransactionId}`
+        : undefined
     })
 
   } catch (err) {
@@ -232,44 +279,74 @@ router.post('/capture', async (req, res) => {
 // ====================
 
 router.get('/return/success', (req, res) => {
-  console.log('=== SAFERPAY SUCCESS RETURN ===');
-  console.log('Full URL:', req.protocol + '://' + req.get('host') + req.originalUrl);
-  console.log('Query params:', req.query);
-  console.log('All headers:', req.headers);
-  console.log('=======================');
+  console.log('=== SAFERPAY SUCCESS RETURN ===')
+  console.log('Full URL:', req.protocol + '://' + req.get('host') + req.originalUrl)
+  console.log('Query params:', req.query)
+  console.log('All headers:', req.headers)
+  console.log('=======================')
 
-  const { token, result, success, ...otherParams } = req.query;
+  const { token, orderId, result, success, ...otherParams } = req.query
 
-  if (!token) {
-    console.log('❌ NO TOKEN FOUND! Available params:', Object.keys(req.query));
+  let resolvedToken = token
 
-    // Show ALL parameters for debugging
-    let debugInfo = 'No token provided. Available parameters: ';
-    for (const [key, value] of Object.entries(req.query)) {
-      debugInfo += `${key}=${value}, `;
+  if (!resolvedToken && orderId) {
+    const entry = tokenStore.get(orderId)
+    resolvedToken = entry?.token
+    if (resolvedToken) {
+      tokenStore.delete(orderId)
     }
-
-    return res.redirect(`/error.html?message=${encodeURIComponent(debugInfo)}`);
   }
 
-  console.log('✅ Token received:', token.substring(0, 20) + '...');
-  res.redirect(`/payment-success.html?token=${token}`);
-});
+  if (!resolvedToken) {
+    console.log('NO TOKEN FOUND! Available params:', Object.keys(req.query))
+
+    // Show ALL parameters for debugging
+    let debugInfo = 'No token available. Available parameters: '
+    for (const [key, value] of Object.entries(req.query)) {
+      debugInfo += `${key}=${value}, `
+    }
+
+    return res.redirect(`/error.html?message=${encodeURIComponent(debugInfo)}`)
+  }
+
+  console.log('Token received:', resolvedToken.substring(0, 20) + '...')
+  res.redirect(`/success.html?token=${resolvedToken}`)
+})
 
 router.get('/return/fail', (req, res) => {
-  const { token } = req.query
-  res.redirect(`/payment-fail.html${token ? `?token=${token}` : ''}`)
+  const { token, orderId } = req.query
+  const resolvedToken = token || tokenStore.get(orderId)?.token
+  if (orderId) {
+    tokenStore.delete(orderId)
+  }
+  res.redirect(`/fail.html${resolvedToken ? `?token=${resolvedToken}` : ''}`)
 })
 
 router.get('/return/abort', (req, res) => {
-  const { token } = req.query
-  res.redirect(`/payment-abort.html${token ? `?token=${token}` : ''}`)
+  const { token, orderId } = req.query
+  const resolvedToken = token || tokenStore.get(orderId)?.token
+  if (orderId) {
+    tokenStore.delete(orderId)
+  }
+  res.redirect(`/abort.html${resolvedToken ? `?token=${resolvedToken}` : ''}`)
 })
 
 router.post('/notification', (req, res) => {
   try {
     const data = req.body
     console.log('Saferpay webhook received:', data)
+
+    const transaction = data?.Transaction
+    if (transaction?.Id) {
+      receiptStore.set(transaction.Id, {
+        status: transaction.Status,
+        amount: transaction.Amount?.Value,
+        currency: transaction.Amount?.CurrencyCode,
+        method: data?.PaymentMeans?.Brand?.Name || 'Card',
+        date: transaction.Date || new Date().toISOString()
+      })
+    }
+
     res.status(200).send('OK')
   } catch (error) {
     console.error('Webhook error:', error)
@@ -277,4 +354,14 @@ router.post('/notification', (req, res) => {
   }
 })
 
+router.get('/transaction/:id', (req, res) => {
+  const { id } = req.params
+  const receipt = receiptStore.get(id)
+  if (!receipt) {
+    return res.status(404).json({ error: 'Transaction not found' })
+  }
+  return res.json(receipt)
+})
+
 export default router
+

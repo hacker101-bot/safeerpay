@@ -1,5 +1,4 @@
 import 'dotenv/config'
-import fetch from 'node-fetch'
 import express from 'express'
 import path from 'path'
 import saferpayRoutes from './src/routes/saferpayRoutes.js'
@@ -17,8 +16,7 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000
 
-/* app.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`)
-}) */
+})
 
-export default app
